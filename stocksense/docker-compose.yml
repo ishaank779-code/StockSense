@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: stocksense-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: stocksense
+      MYSQL_USER: stocksense
+      MYSQL_PASSWORD: stocksense123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: stocksense-backend
+    ports:
+      - "8000:8000"
+    environment:
+      USE_SQLITE: "false"
+      DATABASE_URL: mysql+pymysql://stocksense:stocksense123@mysql:3306/stocksense
+      SECRET_KEY: stocksense-docker-secret-change-me
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+volumes:
+  mysql_data:
